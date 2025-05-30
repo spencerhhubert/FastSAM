@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from .utils import image_to_np_ndarray
 from PIL import Image
+import clip
 
 
 class FastSAMPrompt:
@@ -16,7 +17,7 @@ class FastSAMPrompt:
         self.device = device
         self.results = results
         self.img = image
-    
+
     def _segment_image(self, image, bbox):
         if isinstance(image, Image.Image):
             image_array = np.array(image)
@@ -178,8 +179,8 @@ class FastSAMPrompt:
         result = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
         plt.close()
         return result
-            
-    # Remark for refactoring: IMO a function should do one thing only, storing the image and plotting should be seperated and do not necessarily need to be class functions but standalone utility functions that the user can chain in his scripts to have more fine-grained control. 
+
+    # Remark for refactoring: IMO a function should do one thing only, storing the image and plotting should be seperated and do not necessarily need to be class functions but standalone utility functions that the user can chain in his scripts to have more fine-grained control.
     def plot(self,
              annotations,
              output_path,
@@ -193,13 +194,13 @@ class FastSAMPrompt:
         if len(annotations) == 0:
             return None
         result = self.plot_to_result(
-            annotations, 
-            bboxes, 
-            points, 
-            point_label, 
+            annotations,
+            bboxes,
+            points,
+            point_label,
             mask_random_color,
-            better_quality, 
-            retina, 
+            better_quality,
+            retina,
             withContours,
         )
 
@@ -208,7 +209,7 @@ class FastSAMPrompt:
             os.makedirs(path)
         result = result[:, :, ::-1]
         cv2.imwrite(output_path, result)
-     
+
     #   CPU post process
     def fast_show_mask(
         self,
@@ -333,10 +334,10 @@ class FastSAMPrompt:
         preprocessed_images = [preprocess(image).to(device) for image in elements]
         try:
            import clip  # for linear_assignment
-    
+
         except (ImportError, AssertionError, AttributeError):
            from ultralytics.yolo.utils.checks import check_requirements
-    
+
            check_requirements('git+https://github.com/openai/CLIP.git')  # required before installing lap from source
            import clip
 
@@ -369,7 +370,7 @@ class FastSAMPrompt:
                 filter_id.append(_)
                 continue
             bbox = self._get_bbox_from_mask(mask['segmentation'])  # mask 的 bbox
-            cropped_boxes.append(self._segment_image(image, bbox))  
+            cropped_boxes.append(self._segment_image(image, bbox))
             # cropped_boxes.append(segment_image(image,mask["segmentation"]))
             cropped_images.append(bbox)  # Save the bounding box of the cropped image.
 
@@ -412,7 +413,7 @@ class FastSAMPrompt:
         max_iou_index = list(set(max_iou_index))
         return np.array(masks[max_iou_index].cpu().numpy())
 
-    def point_prompt(self, points, pointlabel):  # numpy 
+    def point_prompt(self, points, pointlabel):  # numpy
         if self.results == None:
             return []
         masks = self._format_results(self.results[0], 0)
@@ -453,4 +454,3 @@ class FastSAMPrompt:
         if self.results == None:
             return []
         return self.results[0].masks.data
-        
