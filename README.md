@@ -51,6 +51,12 @@ Install CLIP(Required if the text prompt is being tested.):
 pip install git+https://github.com/openai/CLIP.git
 ```
 
+Install this package:
+```shell
+pip install --upgrade setuptools packaging
+pip install -e .
+```
+
 ## <a name="GettingStarted"></a> Getting Started
 
 
